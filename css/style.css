@@ -1,34 +1,74 @@
 /* ==========================================================================
-   Luna 手机端虚拟桌宠 · Step 1.1 基础样式
-   浅色主题变量 + 居中排版 + 安全区适配（暂不含深色主题）
+   Luna 手机端虚拟桌宠
+   Step 1.1  基础骨架 · 浅色主题 · 三段式布局
+   Step 1.2  双主题（light / dark-OLED）· 横屏 OLED 摆件模式 · 电量与休眠状态
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   1. 浅色主题（默认）
+   -------------------------------------------------------------------------- */
+
 :root {
-  /* 浅色主题色板 */
   --luna-bg: #f7f5f2;
   --luna-surface: #ffffff;
   --luna-surface-soft: #f1eef4;
   --luna-border: rgba(43, 43, 51, 0.1);
+  --luna-border-strong: rgba(43, 43, 51, 0.16);
   --luna-text: #2b2b33;
   --luna-text-muted: #7a7a86;
   --luna-text-faint: #a9a9b4;
   --luna-accent: #b98fd0;
+  --luna-accent-soft: rgba(185, 143, 208, 0.14);
 
-  /* 排版与圆角 */
+  --luna-btn-bg: #ffffff;
+  --luna-btn-text: #2b2b33;
+  --luna-btn-border: rgba(43, 43, 51, 0.14);
+  --luna-btn-active-bg: #f1eef4;
+
   --luna-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --luna-radius-lg: 20px;
   --luna-radius-md: 14px;
+  --luna-radius-pill: 999px;
   --luna-gap: 14px;
 
-  /* 安全区（刘海屏 / 手势条） */
   --luna-safe-top: env(safe-area-inset-top, 0px);
   --luna-safe-bottom: env(safe-area-inset-bottom, 0px);
   --luna-safe-left: env(safe-area-inset-left, 0px);
   --luna-safe-right: env(safe-area-inset-right, 0px);
 
+  --luna-transition: 220ms ease;
+
   color-scheme: light;
 }
+
+/* --------------------------------------------------------------------------
+   2. OLED 纯黑深色主题
+   -------------------------------------------------------------------------- */
+
+html[data-theme="dark"] {
+  --luna-bg: #000000;
+  --luna-surface: #0a0a0a;
+  --luna-surface-soft: #0d0d0d;
+  --luna-border: rgba(255, 255, 255, 0.14);
+  --luna-border-strong: rgba(255, 255, 255, 0.22);
+  --luna-text: #f2f2f5;
+  --luna-text-muted: #b9b9c4;
+  --luna-text-faint: #7e7e8a;
+  --luna-accent: #d7b8ea;
+  --luna-accent-soft: rgba(215, 184, 234, 0.16);
+
+  --luna-btn-bg: #0c0c0c;
+  --luna-btn-text: #f2f2f5;
+  --luna-btn-border: rgba(255, 255, 255, 0.18);
+  --luna-btn-active-bg: #1a1a1a;
+
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------------
+   3. 基础重置与页面骨架
+   -------------------------------------------------------------------------- */
 
 *,
 *::before,
@@ -52,9 +92,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  transition: background-color var(--luna-transition), color var(--luna-transition);
 }
 
-/* 主容器：纵向三段布局，优先 100dvh */
+/* 主容器：竖屏三段式 */
 .app {
   display: flex;
   flex-direction: column;
@@ -69,16 +110,18 @@ body {
   padding-right: calc(var(--luna-safe-right) + 20px);
 }
 
-/* ---------- 顶部：时间日期区 ---------- */
+/* --------------------------------------------------------------------------
+   4. 时间 / 日期 / 电量
+   -------------------------------------------------------------------------- */
 
 .clock {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   width: 100%;
-  padding: 8px 4px 4px;
+  padding: 8px 4px 0;
   text-align: center;
 }
 
@@ -96,6 +139,7 @@ body {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+  transition: color var(--luna-transition);
 }
 
 .clock__seconds {
@@ -106,6 +150,15 @@ body {
   font-feature-settings: "tnum" 1;
 }
 
+/* 日期与电量同一行 */
+.clock__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 10px;
+}
+
 .clock__date {
   margin: 0;
   font-size: clamp(13px, 4vw, 15px);
@@ -113,19 +166,54 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* ---------- 中部：宠物舞台占位区 ---------- */
+.clock__battery {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 2px 9px;
+  border: 1px solid var(--luna-border);
+  border-radius: var(--luna-radius-pill);
+  background-color: var(--luna-surface);
+  font-size: clamp(12px, 3.4vw, 13px);
+  color: var(--luna-text-muted);
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--luna-transition), color var(--luna-transition);
+}
+
+.clock__battery[hidden] {
+  display: none;
+}
+
+.clock__battery[data-charging="true"] {
+  border-color: var(--luna-accent);
+  color: var(--luna-accent);
+  background-color: var(--luna-accent-soft);
+}
+
+.clock__battery-icon {
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   5. 宠物舞台占位区
+   -------------------------------------------------------------------------- */
 
 .stage {
   flex: 1 1 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   width: 100%;
   min-height: 180px;
   padding: 16px;
   border: 1px dashed var(--luna-border);
   border-radius: var(--luna-radius-lg);
   background-color: var(--luna-surface-soft);
+  transition: background-color var(--luna-transition), border-color var(--luna-transition);
 }
 
 .stage__placeholder {
@@ -136,24 +224,170 @@ body {
   text-align: center;
 }
 
-/* ---------- 底部：操作栏占位区 ---------- */
+.stage__status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--luna-text-muted);
+  letter-spacing: 0.04em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage[data-state="SLEEP"] .stage__status {
+  color: var(--luna-accent);
+}
+
+/* --------------------------------------------------------------------------
+   6. 操作栏与按钮
+   -------------------------------------------------------------------------- */
 
 .action-bar {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   width: 100%;
-  min-height: 64px;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border: 1px solid var(--luna-border);
   border-radius: var(--luna-radius-md);
   background-color: var(--luna-surface);
+  transition: background-color var(--luna-transition), border-color var(--luna-transition);
 }
 
-.action-bar__placeholder {
-  margin: 0;
-  font-size: 13px;
-  color: var(--luna-text-faint);
-  letter-spacing: 0.06em;
+.btn {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1 1 0;
+  max-width: 180px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--luna-btn-border);
+  border-radius: var(--luna-radius-pill);
+  background-color: var(--luna-btn-bg);
+  color: var(--luna-btn-text);
+  font-family: inherit;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background-color var(--luna-transition), border-color var(--luna-transition),
+    transform 120ms ease;
+}
+
+.btn:active {
+  background-color: var(--luna-btn-active-bg);
+  transform: scale(0.98);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--luna-accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   7. 横屏：OLED 纯黑桌面摆件模式（左右分栏、隐藏操作栏）
+   -------------------------------------------------------------------------- */
+
+@media (orientation: landscape) {
+  /* 横屏强制 OLED 纯黑 + 高对比度柔白，与用户选择的主题无关 */
+  html,
+  html[data-theme="light"],
+  html[data-theme="dark"] {
+    --luna-bg: #000000;
+    --luna-surface: #0a0a0a;
+    --luna-surface-soft: #000000;
+    --luna-border: rgba(255, 255, 255, 0.12);
+    --luna-border-strong: rgba(255, 255, 255, 0.2);
+    --luna-text: #f5f5f7;
+    --luna-text-muted: #c4c4cd;
+    --luna-text-faint: #8b8b96;
+    --luna-accent: #e6d2f2;
+    --luna-accent-soft: rgba(230, 210, 242, 0.12);
+
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #000000;
+    overflow: hidden;
+  }
+
+  .app {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 18px;
+    overflow: hidden;
+    padding-top: calc(var(--luna-safe-top) + 10px);
+    padding-bottom: calc(var(--luna-safe-bottom) + 10px);
+    padding-left: calc(var(--luna-safe-left) + 22px);
+    padding-right: calc(var(--luna-safe-right) + 22px);
+  }
+
+  /* 左侧：超大时钟 + 日期 + 电量 */
+  .clock {
+    flex: 0 0 52%;
+    align-self: stretch;
+    justify-content: center;
+    gap: 10px;
+    padding: 0;
+    text-align: right;
+  }
+
+  .clock__time-row {
+    justify-content: flex-end;
+  }
+
+  .clock__time {
+    font-size: clamp(72px, 24vh, 170px);
+  }
+
+  .clock__seconds {
+    font-size: clamp(18px, 5vh, 34px);
+  }
+
+  .clock__meta {
+    justify-content: flex-end;
+  }
+
+  .clock__date {
+    font-size: clamp(13px, 2.6vh, 19px);
+  }
+
+  .clock__battery {
+    font-size: clamp(12px, 2.4vh, 16px);
+  }
+
+  /* 右侧：宠物舞台，铺满剩余高度 */
+  .stage {
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-height: 0;
+    border-style: solid;
+    border-radius: 24px;
+    background-color: transparent;
+    padding: 12px;
+  }
+
+  /* 画面纯净：隐藏占位说明与底部操作栏 */
+  .stage__placeholder {
+    display: none;
+  }
+
+  .action-bar {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   8. 无障碍与省电偏好
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
