@@ -19,6 +19,7 @@ import eventBus from './core/eventBus.js';
 const WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
 
 const THEME = { LIGHT: 'light', DARK: 'dark' };
+/** 浏览器 UI / 安卓状态栏配色：浅色对齐 --luna-bg，深色对齐 OLED 纯黑 */
 const THEME_COLOR = { light: '#f7f5f2', dark: '#000000' };
 
 const STATE = { IDLE: 'IDLE', SLEEP: 'SLEEP' };
@@ -50,15 +51,30 @@ function byId(id) {
    1. 主题（light / dark-OLED），持久化键 settings.theme
    ========================================================================== */
 
+/**
+ * 同步 <meta name="theme-color">，让安卓独立窗口（standalone）的状态栏跟随主题。
+ * 若页面里没有该 meta（被裁剪或旧缓存），这里补建一个，避免主题切换后状态栏不跟随。
+ */
+function syncThemeColor(theme) {
+  if (typeof document === 'undefined') return;
+  const color = THEME_COLOR[theme] || THEME_COLOR.light;
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute('name', 'theme-color');
+    const head = document.head || document.documentElement;
+    if (head) head.appendChild(meta);
+  }
+  if (meta.getAttribute('content') !== color) meta.setAttribute('content', color);
+}
+
 /** 把主题落到 <html data-theme> 上，并同步浏览器 UI 配色 */
 export function applyTheme(theme) {
   if (typeof document === 'undefined') return THEME.LIGHT;
 
   const next = theme === THEME.DARK ? THEME.DARK : THEME.LIGHT;
   document.documentElement.dataset.theme = next;
-
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', THEME_COLOR[next]);
+  syncThemeColor(next);
 
   return next;
 }
