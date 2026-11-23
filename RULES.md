@@ -28,7 +28,7 @@
 ```js
 {
   schemaVersion: 1,
-  settings: { theme: "light", renderMode: "svg" },
+  settings: { theme: "light", renderMode: "image" },
   pet: { manualSleep: false }
 }
 ```
@@ -36,8 +36,16 @@
 - 支持**按路径局部读写**（如 `settings.theme`、`pet.manualSleep`）。
 - 局部写入**禁止覆盖同级字段**：只更新目标叶子，其余字段保持原值。
 - **禁止直接返回可篡改的内部根引用**：对外返回的数据必须是深拷贝副本。
+- 旧版本遗留的 `settings.renderMode = "svg"` 由 `init()` 自动迁移为 `"image"`，迁移只在检测到旧值时执行一次。
 
-### 2. `js/core/eventBus.js`
+### 2. 角色立绘与渲染模式
+
+- 角色立绘采用**本地预处理后的透明底 PNG 资源**（`assets/pet/idle.png`、`happy.png`、`sleep.png`，512×512 同画布同基准线），由源图 `assets/pet/luna_sheet.jpg` 离线切分、去底、居中生成；源图保留但不参与运行时加载。
+- **优先使用图片渲染模式**（`settings.renderMode = "image"`）；`config.js` 中的 `renderMode` 与 `images` 映射是唯一数据源，后续如需替换造型只替换 PNG 与映射表，不改渲染逻辑。
+- 三张立绘必须保持同一画布尺寸与基准线，切换状态时角色不得整体位移或裁切。
+- 图片一律使用相对路径引入（如 `./assets/pet/idle.png`），禁止 `/assets/...` 根路径。
+
+### 3. `js/core/eventBus.js`
 
 - 统一提供三个方法：`on(event, callback)`、`emit(event, payload)`、`off(event, callback)`。
 - 同一事件支持挂载多个监听者，触发时全部安全执行（单个监听者抛错不影响其他监听者）。
@@ -47,7 +55,7 @@
   - `pet:interaction`
   - `pet:mood-change`
 
-### 3. 环境边界
+### 4. 环境边界
 
 - 局域网普通 HTTP 地址（如 `http://192.168.x.x:8000`）**不属于** HTTPS 安全上下文。
 - 在该环境下 Battery API 与 Service Worker 受限属正常现象；**严禁**为了「让局域网测试通过」而误改业务代码。
@@ -64,4 +72,4 @@
 
 ## 五、当前进度记录
 
-- `Current Phase: V1 - Step 1.3-A (待验收)`
+- `Current Phase: V1 - Step 1.3-B (待验收)`

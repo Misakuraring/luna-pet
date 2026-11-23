@@ -26,22 +26,35 @@
         </div>
       </header>
 
-      <!-- 中部：宠物舞台（SVG 由 js/pet.js 注入） -->
+      <!-- 中部：宠物舞台（立绘与气泡由 js/pet.js 注入 / 控制） -->
       <main class="stage" id="pet-stage" data-state="IDLE">
+        <div
+          class="bubble"
+          id="luna-bubble"
+          role="status"
+          aria-live="polite"
+          aria-hidden="true"
+        >
+          <p class="bubble__text" id="luna-bubble-text"></p>
+        </div>
+
         <div
           class="pet"
           id="luna-pet"
           data-mood="IDLE"
           role="img"
           aria-label="Luna，星光紫蓝渐变猫娘，轻点可互动"
-        ></div>
-        <p class="stage__status" id="pet-status">当前状态：待机 (IDLE)</p>
+        >
+          <!-- <img class="pet__img"> 由 js/pet.js 按当前造型注入 -->
+        </div>
       </main>
 
       <!-- 底部：操作栏（横屏摆件模式下自动隐藏） -->
       <footer class="action-bar" id="action-bar">
-        <button class="btn" type="button" id="btn-theme">切换主题</button>
+        <button class="btn" type="button" id="btn-feed">投喂</button>
+        <button class="btn" type="button" id="btn-pat">摸头</button>
         <button class="btn" type="button" id="btn-sleep">休息</button>
+        <button class="btn" type="button" id="btn-theme">切换主题</button>
       </footer>
     </div>
 

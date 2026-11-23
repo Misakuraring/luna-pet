@@ -31,7 +31,8 @@ const SELECTORS = {
   batteryText: 'clock-battery-text',
   batteryIcon: 'clock-battery-icon',
   stage: 'pet-stage',
-  status: 'pet-status',
+  feedBtn: 'btn-feed',
+  patBtn: 'btn-pat',
   themeBtn: 'btn-theme',
   sleepBtn: 'btn-sleep',
 };
@@ -217,23 +218,12 @@ function computeSleep() {
   return { state: STATE.IDLE, reason: null };
 }
 
-/** 渲染状态标签与按钮文案 */
+/** 渲染舞台状态与按钮文案（台词气泡由 pet 模块自行处理） */
 function renderSleep() {
   const stage = byId(SELECTORS.stage);
-  const status = byId(SELECTORS.status);
   const btn = byId(SELECTORS.sleepBtn);
 
   if (stage) stage.dataset.state = sleep.state;
-
-  if (status) {
-    if (sleep.state === STATE.SLEEP) {
-      const suffix = sleep.reason === 'manual' ? '手动' : '充电中';
-      status.textContent = `当前状态：休眠中 (SLEEP - ${suffix})`;
-    } else {
-      status.textContent = '当前状态：待机 (IDLE)';
-    }
-  }
-
   if (btn) btn.textContent = sleep.state === STATE.SLEEP ? '唤醒' : '休息';
 }
 
@@ -391,10 +381,35 @@ export function stopClock() {
    5. 交互绑定
    ========================================================================== */
 
-/** 绑定两个按钮；单个 handler 抛错不影响另一个 */
+/**
+ * 绑定四个按钮；单个 handler 抛错不影响其余按钮。
+ * 投喂 / 摸头只广播 pet:interaction，绝不直接调用 pet 模块，避免模块耦合。
+ */
 export function initControls() {
+  const feedBtn = byId(SELECTORS.feedBtn);
+  const patBtn = byId(SELECTORS.patBtn);
   const themeBtn = byId(SELECTORS.themeBtn);
   const sleepBtn = byId(SELECTORS.sleepBtn);
+
+  if (feedBtn) {
+    feedBtn.addEventListener('click', () => {
+      try {
+        eventBus.emit('pet:interaction', { type: 'feed' });
+      } catch (err) {
+        console.error('[ui] 投喂交互广播失败：', err);
+      }
+    });
+  }
+
+  if (patBtn) {
+    patBtn.addEventListener('click', () => {
+      try {
+        eventBus.emit('pet:interaction', { type: 'pet' });
+      } catch (err) {
+        console.error('[ui] 摸头交互广播失败：', err);
+      }
+    });
+  }
 
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {

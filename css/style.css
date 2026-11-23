@@ -201,6 +201,7 @@ body {
    -------------------------------------------------------------------------- */
 
 .stage {
+  position: relative;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -216,190 +217,172 @@ body {
   transition: background-color var(--luna-transition), border-color var(--luna-transition);
 }
 
-.stage__status {
-  margin: 0;
-  font-size: 13px;
-  color: var(--luna-text-muted);
-  letter-spacing: 0.04em;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.stage[data-state="SLEEP"] .stage__status {
-  color: var(--luna-accent);
-}
-
 /* --------------------------------------------------------------------------
-   5.1 宠物造型（Step 1.3-A 内联 SVG 三态）
-   容器只负责尺寸与居中等比缩放；造型切换靠 data-mood，不重建 DOM。
+   5.1 宠物造型（Step 1.3-B 位图模式）
+   立绘为本地预处理的透明底 PNG（512×512，三态同画布同基准），
+   容器只负责等比缩放与状态动效；造型切换只改 data-mood，不重建 DOM。
    -------------------------------------------------------------------------- */
 
 .pet {
+  position: relative;
   flex: 0 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(78%, 300px);
+  width: min(100%, 380px);
   max-width: 100%;
   max-height: 100%;
+  aspect-ratio: 1 / 1;
   cursor: pointer;
+  touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 160ms ease;
 }
 
 .pet[data-mood="SLEEP"] {
   cursor: default;
 }
 
-.pet:active {
-  transform: scale(0.985);
-}
-
-.pet svg {
+.pet__img {
   display: block;
   width: 100%;
-  height: auto;
-  max-height: 100%;
-  overflow: visible;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
-/* 三态互斥显示：同一 viewBox、同一基准线，切换不位移 */
-.luna-state {
-  display: none;
+/* —— 三态轻量动效：只作用于立绘，不干扰指针事件 —— */
+.pet[data-mood="IDLE"] .pet__img {
+  animation: luna-breathe 4.4s ease-in-out infinite;
 }
 
-.pet[data-mood="IDLE"] .luna-state--idle,
-.pet[data-mood="HAPPY"] .luna-state--happy,
-.pet[data-mood="SLEEP"] .luna-state--sleep {
-  display: block;
-}
-
-/* SVG 分组统一以自身包围盒为变换原点，动画才符合直觉 */
-.luna-svg g {
-  transform-box: fill-box;
-}
-
-/* —— 待机：呼吸 / 猫耳微动 / 尾巴轻摆 / 呼吸式眨眼 —— */
-.luna-state--idle .luna-breathe {
-  transform-origin: 50% 100%;
-  animation: luna-breathe 4.2s ease-in-out infinite;
-}
-
-.luna-state--idle .luna-tail {
-  transform-origin: 8% 88%;
-  animation: luna-tail-sway 3.8s ease-in-out infinite;
-}
-
-.luna-state--idle .luna-ears {
-  transform-origin: 50% 96%;
-  animation: luna-ear-twitch 7s ease-in-out infinite;
-}
-
-.luna-state--idle .luna-eyes {
-  transform-origin: 50% 55%;
-  animation: luna-blink 6.4s ease-in-out infinite;
-}
-
-/* —— 开心：雀跃跳跃 + 月牙笑眼 + 爱心与星芒粒子 —— */
-.luna-state--happy .luna-happy-jump {
-  transform-origin: 50% 100%;
+.pet[data-mood="HAPPY"] .pet__img {
   animation: luna-hop 0.62s ease-in-out 4;
 }
 
-.luna-state--happy .luna-tail {
-  transform-origin: 6% 90%;
-  animation: luna-tail-sway 0.9s ease-in-out infinite;
-}
-
-.luna-state--happy .luna-ears {
-  transform-origin: 50% 96%;
-  animation: luna-ear-perk 0.8s ease-in-out infinite;
-}
-
-.luna-state--happy .luna-ear-tip {
-  animation: luna-tip-glow 1.1s ease-in-out infinite;
-}
-
-.luna-heart,
-.luna-spark {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-}
-
-.luna-state--happy .luna-heart,
-.luna-state--sleep .luna-heart {
-  animation: luna-heart-float 1.9s ease-out infinite;
-}
-
-.luna-heart--2 {
-  animation-delay: 0.55s;
-}
-
-.luna-heart--3 {
-  animation-delay: 1.1s;
-}
-
-.luna-state--idle .luna-spark,
-.luna-state--happy .luna-spark,
-.luna-state--sleep .luna-spark {
-  animation: luna-twinkle 3.4s ease-in-out infinite;
-}
-
-.luna-spark--2 {
-  animation-delay: 0.9s;
-}
-
-.luna-spark--3 {
-  animation-delay: 1.8s;
-}
-
-/* —— 睡眠：浅呼吸 / 尾巴缓摆 / Zzz 上浮 —— */
-.luna-state--sleep .luna-breathe {
-  transform-origin: 50% 100%;
+.pet[data-mood="SLEEP"] .pet__img {
   animation: luna-sleep-breathe 5.4s ease-in-out infinite;
 }
 
-.luna-state--sleep .luna-tail {
-  transform-origin: 10% 90%;
-  animation: luna-tail-sway 6.5s ease-in-out infinite;
+/* 轻点 / 梦话的极短反馈：单次播放，结束由 JS 移除类名 */
+.pet[data-mood="IDLE"].is-bump .pet__img {
+  animation: luna-bump 0.34s ease-out;
 }
 
-.luna-state--sleep .luna-head {
-  transform-origin: 50% 100%;
-  animation: luna-sleep-nod 7s ease-in-out infinite;
+.pet[data-mood="SLEEP"].is-nudge .pet__img {
+  animation: luna-nudge 0.6s ease-in-out;
 }
 
-.luna-z {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  opacity: 0;
-}
-
-.luna-state--sleep .luna-z {
-  animation: luna-zzz 3.6s ease-in-out infinite;
-}
-
-.luna-z--2 {
-  animation-delay: 1.2s;
-}
-
-.luna-z--3 {
-  animation-delay: 2.4s;
+/* 立绘加载失败兜底提示 */
+.pet[data-broken="true"]::after {
+  content: "立绘加载失败";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  padding: 2px 8px;
+  border-radius: var(--luna-radius-pill);
+  background-color: var(--luna-surface);
+  color: var(--luna-text-muted);
+  font-size: 12px;
+  transform: translateX(-50%);
 }
 
 /* --------------------------------------------------------------------------
-   5.2 造型关键帧
+   5.2 对话气泡
+   -------------------------------------------------------------------------- */
+
+.bubble {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 3;
+  max-width: min(88%, 300px);
+  padding: 9px 15px;
+  border: 1px solid var(--luna-border);
+  border-radius: 16px;
+  background-color: var(--luna-surface);
+  box-shadow: 0 8px 20px rgba(43, 32, 74, 0.14);
+  color: var(--luna-text);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 8px) scale(0.94);
+  transition: opacity 220ms ease, transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1.2),
+    visibility 0s linear 220ms;
+}
+
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-right: 1px solid var(--luna-border);
+  border-bottom: 1px solid var(--luna-border);
+  background-color: var(--luna-surface);
+  transform: rotate(45deg);
+}
+
+.bubble.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0) scale(1);
+  transition: opacity 200ms ease, transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1.15),
+    visibility 0s;
+}
+
+.bubble__text {
+  margin: 0;
+}
+
+/* OLED 纯黑模式：深灰底 + 高对比文字，气泡不糊进背景 */
+html[data-theme="dark"] .bubble {
+  background-color: #14141c;
+  border-color: rgba(236, 214, 255, 0.3);
+  color: #f5f1ff;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="dark"] .bubble::after {
+  background-color: #14141c;
+  border-right-color: rgba(236, 214, 255, 0.3);
+  border-bottom-color: rgba(236, 214, 255, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   5.3 造型关键帧
    -------------------------------------------------------------------------- */
 
 @keyframes luna-breathe {
   0%,
   100% {
-    transform: translateY(0) scaleY(1);
+    transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-2.5px) scaleY(1.012);
+    transform: translateY(-5px) scale(1.008);
+  }
+}
+
+@keyframes luna-hop {
+  0%,
+  52%,
+  100% {
+    transform: translateY(0);
+  }
+  26% {
+    transform: translateY(-14px) scale(1.008);
+  }
+  72% {
+    transform: translateY(-5px);
   }
 }
 
@@ -407,134 +390,36 @@ body {
   0%,
   100% {
     transform: scale(1);
+    opacity: 0.94;
   }
   50% {
-    transform: scale(1.022);
+    transform: scale(1.018);
+    opacity: 1;
   }
 }
 
-@keyframes luna-sleep-nod {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(-1.2deg);
-  }
-}
-
-@keyframes luna-tail-sway {
-  0%,
-  100% {
-    transform: rotate(-5deg);
-  }
-  50% {
-    transform: rotate(6deg);
-  }
-}
-
-@keyframes luna-ear-twitch {
-  0%,
-  86%,
-  100% {
-    transform: rotate(0deg);
-  }
-  89% {
-    transform: rotate(-4deg);
-  }
-  92% {
-    transform: rotate(3deg);
-  }
-  95% {
-    transform: rotate(0deg);
-  }
-}
-
-@keyframes luna-ear-perk {
-  0%,
-  100% {
-    transform: rotate(-2deg);
-  }
-  50% {
-    transform: rotate(2.5deg);
-  }
-}
-
-@keyframes luna-tip-glow {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.75;
-  }
-}
-
-@keyframes luna-blink {
-  0%,
-  91%,
-  100% {
-    transform: scaleY(1);
-  }
-  94%,
-  96% {
-    transform: scaleY(0.12);
-  }
-}
-
-@keyframes luna-hop {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  28% {
-    transform: translateY(-11px);
-  }
-  52% {
-    transform: translateY(0);
-  }
-  72% {
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes luna-heart-float {
+@keyframes luna-bump {
   0% {
-    opacity: 0;
-    transform: translateY(5px) scale(0.7);
+    transform: translateY(0) scale(1);
   }
-  35% {
-    opacity: 0.9;
+  45% {
+    transform: translateY(-4px) scale(0.994);
   }
   100% {
-    opacity: 0;
-    transform: translateY(-16px) scale(1.05);
+    transform: translateY(0) scale(1);
   }
 }
 
-@keyframes luna-twinkle {
+@keyframes luna-nudge {
   0%,
   100% {
-    opacity: 0.28;
-    transform: scale(0.9);
+    transform: rotate(0deg);
   }
-  50% {
-    opacity: 0.95;
-    transform: scale(1.08);
+  30% {
+    transform: rotate(-1.6deg);
   }
-}
-
-@keyframes luna-zzz {
-  0% {
-    opacity: 0;
-    transform: translate(0, 6px) scale(0.8);
-  }
-  35% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(7px, -15px) scale(1.1);
+  65% {
+    transform: rotate(1.2deg);
   }
 }
 
@@ -544,12 +429,11 @@ body {
 
 .action-bar {
   flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 9px 10px;
   border: 1px solid var(--luna-border);
   border-radius: var(--luna-radius-md);
   background-color: var(--luna-surface);
@@ -559,20 +443,37 @@ body {
 .btn {
   -webkit-appearance: none;
   appearance: none;
-  flex: 1 1 0;
-  max-width: 180px;
+  min-width: 0;
   min-height: 44px;
-  padding: 10px 16px;
+  padding: 10px 6px;
   border: 1px solid var(--luna-btn-border);
   border-radius: var(--luna-radius-pill);
   background-color: var(--luna-btn-bg);
   color: var(--luna-btn-text);
   font-family: inherit;
-  font-size: 15px;
-  letter-spacing: 0.04em;
+  font-size: 13.5px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
   transition: background-color var(--luna-transition), border-color var(--luna-transition),
     transform 120ms ease;
+}
+
+/* 窄屏（≤360px）再收一档，四个按钮不换行、不溢出 */
+@media (max-width: 360px) {
+  .action-bar {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .btn {
+    padding: 10px 4px;
+    font-size: 12.5px;
+    letter-spacing: 0;
+  }
 }
 
 .btn:active {
@@ -675,7 +576,8 @@ body {
     width: min(88%, 320px);
   }
 
-  .action-bar {
+  .action-bar,
+  .bubble {
     display: none;
   }
 }

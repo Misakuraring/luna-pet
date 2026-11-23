@@ -21,7 +21,7 @@ function createDefaultData() {
     schemaVersion: SCHEMA_VERSION,
     settings: {
       theme: 'light',
-      renderMode: 'svg',
+      renderMode: 'image',
     },
     pet: {
       manualSleep: false,
@@ -146,8 +146,14 @@ export function getAll() {
   return deepClone(merged) || defaults;
 }
 
+/** 需要迁移的历史渲染模式：'svg' 为 Step 1.3-A 的内联矢量，已废弃 */
+const LEGACY_RENDER_MODE = 'svg';
+const RENDER_MODE = 'image';
+
 /**
  * 首次运行初始化：根键缺失或结构损坏时写入默认值。
+ * 同时把旧存储里的 settings.renderMode = 'svg' 迁移为 'image'
+ * （只改这一个叶子，主题与 pet.manualSleep 原样保留）。
  * @returns {boolean} 是否执行了写入
  */
 export function init() {
@@ -155,6 +161,14 @@ export function init() {
   const parsed = safeParse(rawText);
 
   if (isPlainObject(parsed)) {
+    const migrated = deepClone(parsed) || {};
+    const settings = isPlainObject(migrated.settings) ? migrated.settings : null;
+
+    if (settings && settings.renderMode === LEGACY_RENDER_MODE) {
+      settings.renderMode = RENDER_MODE;
+      return writeRaw(JSON.stringify(mergeWithDefaults(createDefaultData(), migrated)));
+    }
+
     const merged = mergeWithDefaults(createDefaultData(), parsed);
     // 结构缺字段时补齐；无变化则不写，减少写入次数
     if (JSON.stringify(merged) === JSON.stringify(parsed)) return false;
