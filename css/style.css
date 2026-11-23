@@ -1,0 +1,159 @@
+/* ==========================================================================
+   Luna 手机端虚拟桌宠 · Step 1.1 基础样式
+   浅色主题变量 + 居中排版 + 安全区适配（暂不含深色主题）
+   ========================================================================== */
+
+:root {
+  /* 浅色主题色板 */
+  --luna-bg: #f7f5f2;
+  --luna-surface: #ffffff;
+  --luna-surface-soft: #f1eef4;
+  --luna-border: rgba(43, 43, 51, 0.1);
+  --luna-text: #2b2b33;
+  --luna-text-muted: #7a7a86;
+  --luna-text-faint: #a9a9b4;
+  --luna-accent: #b98fd0;
+
+  /* 排版与圆角 */
+  --luna-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --luna-radius-lg: 20px;
+  --luna-radius-md: 14px;
+  --luna-gap: 14px;
+
+  /* 安全区（刘海屏 / 手势条） */
+  --luna-safe-top: env(safe-area-inset-top, 0px);
+  --luna-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --luna-safe-left: env(safe-area-inset-left, 0px);
+  --luna-safe-right: env(safe-area-inset-right, 0px);
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  /* 旧浏览器回退，随后用 dvh 覆盖 */
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--luna-bg);
+  color: var(--luna-text);
+  font-family: var(--luna-font);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* 主容器：纵向三段布局，优先 100dvh */
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--luna-gap);
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: calc(var(--luna-safe-top) + 18px);
+  padding-bottom: calc(var(--luna-safe-bottom) + 18px);
+  padding-left: calc(var(--luna-safe-left) + 20px);
+  padding-right: calc(var(--luna-safe-right) + 20px);
+}
+
+/* ---------- 顶部：时间日期区 ---------- */
+
+.clock {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 4px 4px;
+  text-align: center;
+}
+
+.clock__time-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.clock__time {
+  font-size: clamp(56px, 20vw, 88px);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.clock__seconds {
+  font-size: clamp(16px, 5vw, 22px);
+  font-weight: 400;
+  color: var(--luna-text-faint);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.clock__date {
+  margin: 0;
+  font-size: clamp(13px, 4vw, 15px);
+  color: var(--luna-text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 中部：宠物舞台占位区 ---------- */
+
+.stage {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 180px;
+  padding: 16px;
+  border: 1px dashed var(--luna-border);
+  border-radius: var(--luna-radius-lg);
+  background-color: var(--luna-surface-soft);
+}
+
+.stage__placeholder {
+  margin: 0;
+  font-size: 14px;
+  color: var(--luna-text-faint);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+/* ---------- 底部：操作栏占位区 ---------- */
+
+.action-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 1px solid var(--luna-border);
+  border-radius: var(--luna-radius-md);
+  background-color: var(--luna-surface);
+}
+
+.action-bar__placeholder {
+  margin: 0;
+  font-size: 13px;
+  color: var(--luna-text-faint);
+  letter-spacing: 0.06em;
+}

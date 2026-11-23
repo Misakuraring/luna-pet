@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f7f5f2" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Luna · 手机桌宠</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- 顶部：时间日期区 -->
+      <header class="clock" id="clock-panel">
+        <div class="clock__time-row">
+          <span class="clock__time" id="clock-time">--:--</span>
+          <span class="clock__seconds" id="clock-seconds">--</span>
+        </div>
+        <p class="clock__date" id="clock-date">正在读取时间…</p>
+      </header>
+
+      <!-- 中部：宠物舞台占位区 -->
+      <main class="stage" id="pet-stage">
+        <p class="stage__placeholder">宠物舞台（后续步骤填充）</p>
+      </main>
+
+      <!-- 底部：操作栏占位区 -->
+      <footer class="action-bar" id="action-bar">
+        <p class="action-bar__placeholder">操作栏（预留）</p>
+      </footer>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
