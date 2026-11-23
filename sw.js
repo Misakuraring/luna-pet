@@ -12,7 +12,7 @@
  * 否则老客户端会一直命中旧缓存，看不到更新。
  */
 
-const CACHE_NAME = 'luna-pet-v1.0.1';
+const CACHE_NAME = 'luna-pet-v1.0.2';
 
 /** 核心静态资源（全部相对路径，作用于 sw 所在目录） */
 const PRECACHE_URLS = [
