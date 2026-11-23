@@ -5,6 +5,7 @@
  * Step 1.3-A：挂载 Luna 三态造型（须早于休眠门，才能接住初始情绪事件）
  * Step 1.3-B：立绘改为透明底 PNG 位图渲染，加入台词气泡与 Pointer Events
  * Step 1.3-C：启动统一的 rAF 主循环（全应用仅此一个，跟着页面可见性暂停/恢复）
+ * Step 1.4：安全上下文下注册 Service Worker（离线缓存），非安全上下文静默跳过
  *
  * 初始化顺序有依赖：
  *   storage → 主题（避免闪白） → 时钟 → 宠物（先订阅 pet:mood-change）
@@ -73,6 +74,42 @@ function bootstrap() {
     });
   } catch (err) {
     console.info('[main] 电量监听不可用：', err);
+  }
+
+  registerServiceWorker();
+}
+
+/**
+ * 安全地注册 Service Worker。
+ * - 不支持该 API：仅 console.info
+ * - 非安全上下文（如局域网 http://192.168.x.x:8000）：仅 console.info 并跳过，
+ *   不产生任何红色报错；PWA 安装与离线缓存需改用 https 或 localhost
+ */
+function registerServiceWorker() {
+  // 先判安全上下文：局域网 http://192.168.x.x 下 navigator.serviceWorker 本身就不存在，
+  // 先判这一条才能给出准确的提示，而不是误报“环境不支持”
+  if (!window.isSecureContext) {
+    console.info(
+      '[main] 当前为非安全上下文（局域网 HTTP），Service Worker 与 PWA 安装能力受限，已跳过注册；' +
+        '用 https 或 localhost 访问即自动启用离线缓存'
+    );
+    return;
+  }
+  if (!('serviceWorker' in navigator)) {
+    console.info('[main] 当前环境不支持 Service Worker，已跳过离线缓存注册');
+    return;
+  }
+  try {
+    const registering = navigator.serviceWorker.register('./sw.js', { scope: './' });
+    Promise.resolve(registering)
+      .then((registration) => {
+        console.info('[main] Service Worker 已注册，作用域：' + registration.scope);
+      })
+      .catch((err) => {
+        console.info('[main] Service Worker 注册失败：', err && err.message ? err.message : err);
+      });
+  } catch (err) {
+    console.info('[main] Service Worker 注册被中断：', err && err.message ? err.message : err);
   }
 }
 

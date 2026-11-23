@@ -414,6 +414,15 @@ function preloadImages() {
           img.onload = () => {
             imageState[key] = true;
             preloaded[key] = img;
+            // 回补：冷启动时 mood 可能早于预加载完成就已切到 SLEEP/HAPPY，
+            // 这里在图片就绪的瞬间把当前造型重新应用一次，避免停留旧立绘
+            if (mood === key) {
+              try {
+                applyMood(mood);
+              } catch (err) {
+                console.error('[pet] 预加载回补造型失败：', err);
+              }
+            }
             resolve(true);
           };
           img.onerror = () => {
