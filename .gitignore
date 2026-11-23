@@ -1,0 +1,36 @@
+# ==========================================================================
+# Luna 手机端虚拟桌宠 · Git 忽略清单
+# 只忽略本地临时产物与素材母版，构建产物（assets/pet/*.png）照常入库
+# ==========================================================================
+
+# 立绘素材母版：三合一原图仅本地保留，由它离线切出的三张 PNG 才是仓库资产
+assets/pet/luna_sheet.jpg
+
+# 操作系统垃圾文件
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+desktop.ini
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# 编辑器 / 工具临时文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.tmp
+*.log
+
+# 本地预览与调试用的一次性脚本（避免误提交进仓库）
+/scripts/_local/
+*.local.*
+
+# 依赖与缓存（本项目零依赖，仅防御性忽略）
+node_modules/
+__pycache__/
+*.pyc
+.cache/
