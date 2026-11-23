@@ -2,16 +2,20 @@
  * Luna · 应用入口
  * Step 1.1：初始化 storage、启动时钟
  * Step 1.2：恢复主题、休眠状态机、按钮交互、电量监听
- * Step 1.3-A：挂载宠物 SVG 三态造型（须早于休眠门，才能接住初始情绪事件）
+ * Step 1.3-A：挂载 Luna 三态造型（须早于休眠门，才能接住初始情绪事件）
+ * Step 1.3-B：立绘改为透明底 PNG 位图渲染，加入台词气泡与 Pointer Events
+ * Step 1.3-C：启动统一的 rAF 主循环（全应用仅此一个，跟着页面可见性暂停/恢复）
  *
  * 初始化顺序有依赖：
  *   storage → 主题（避免闪白） → 时钟 → 宠物（先订阅 pet:mood-change）
+ *   → 主循环（宠物已注册 onTick，启动后立刻开始派帧）
  *   → 休眠门（启动即广播初始状态） → 按钮绑定 → 电量监听
  */
 
 import storage from './core/storage.js';
 import ui from './ui.js';
 import pet from './pet.js';
+import loop from './core/loop.js';
 
 function bootstrap() {
   try {
@@ -41,6 +45,13 @@ function bootstrap() {
     pet.initPet();
   } catch (err) {
     console.error('[main] 宠物模块初始化失败：', err);
+  }
+
+  try {
+    // 统一主循环：全应用唯一，内部按 document.hidden 自动暂停/恢复
+    loop.startLoop();
+  } catch (err) {
+    console.error('[main] 主循环初始化失败：', err);
   }
 
   try {

@@ -16,11 +16,19 @@
  *   setMood(m)           → 直接设定造型（'IDLE' | 'HAPPY' | 'SLEEP'），返回生效值
  *   playHappy(type)      → 非 SLEEP 时切 HAPPY + 气泡，happyDurationMs 后回落 IDLE
  *   showBubble(text)     → 手动弹一条气泡（供调试/后续步骤复用）
+ *   getPetRuntime()      → 帧循环联动统计（只读快照）
  *   MOOD                 → 造型常量
+ *
+ * Step 1.3-C 追加：
+ *   - 向 js/core/loop.js 注册轻量 onTick 钩子，仅做帧计数与 dt 观测，
+ *     不接管三态 CSS 动画，也不介入交互状态机；
+ *   - 页面从后台恢复时重建计时基准（死线比对），把过期未触发的恢复计时器、
+ *     气泡计时器和残留按下态一次性收敛，避免卡在 HAPPY / 气泡常显等中间态。
  */
 
 import { PET_CONFIG } from './config.js';
 import eventBus from './core/eventBus.js';
+import { onTick, getLoopStats } from './core/loop.js';
 
 export const MOOD = {
   IDLE: 'IDLE',
@@ -54,6 +62,20 @@ let externalMood = MOOD.IDLE;
 let happyTimer = null;
 let bubbleTimer = null;
 let microTimer = null;
+
+/** 计时死线（绝对时间戳）：页面切后台再回来时用来判断"本该已经到点" */
+let happyDeadline = 0;
+let bubbleDeadline = 0;
+
+/** 主循环联动统计（只读观测，不参与造型逻辑） */
+const runtime = {
+  ticks: 0,
+  elapsed: 0,
+  lastDt: 0,
+  reconciles: 0,
+  ticked: false,
+};
+let unsubscribeTick = null;
 
 /** 按下追踪：只有同一 pointerId 的 pointerup 才算数 */
 let pointerTrack = null;
@@ -131,6 +153,7 @@ function applyMood(next) {
 /** 直接设定造型，返回实际生效值 */
 export function setMood(next) {
   happyTimer = safeClear(happyTimer);
+  happyDeadline = 0;
   return applyMood(next);
 }
 
@@ -154,8 +177,10 @@ export function showBubble(text) {
   bubbleEl.setAttribute('aria-hidden', 'false');
 
   bubbleTimer = safeClear(bubbleTimer);
+  bubbleDeadline = Date.now() + PET_CONFIG.bubbleDurationMs;
   bubbleTimer = setTimeout(() => {
     bubbleTimer = null;
+    bubbleDeadline = 0;
     hideBubble();
   }, PET_CONFIG.bubbleDurationMs);
 
@@ -165,6 +190,7 @@ export function showBubble(text) {
 /** 立即淡出气泡 */
 export function hideBubble() {
   bubbleTimer = safeClear(bubbleTimer);
+  bubbleDeadline = 0;
   if (!bubbleEl) return;
   bubbleEl.classList.remove('is-visible');
   bubbleEl.setAttribute('aria-hidden', 'true');
@@ -217,8 +243,10 @@ export function playHappy(type = 'tap') {
 
   eventBus.emit('pet:mood-change', { state: MOOD.HAPPY, text });
 
+  happyDeadline = Date.now() + PET_CONFIG.happyDurationMs;
   happyTimer = setTimeout(() => {
     happyTimer = null;
+    happyDeadline = 0;
     if (mood === MOOD.HAPPY) applyMood(MOOD.IDLE);
   }, PET_CONFIG.happyDurationMs);
 
@@ -244,6 +272,7 @@ function handleMoodChange(payload) {
   if (state === 'SLEEP') {
     externalMood = MOOD.SLEEP;
     happyTimer = safeClear(happyTimer);
+    happyDeadline = 0;
     hideBubble();
     applyMood(MOOD.SLEEP);
     return;
@@ -253,6 +282,7 @@ function handleMoodChange(payload) {
     const wasSleeping = externalMood === MOOD.SLEEP;
     externalMood = MOOD.IDLE;
     happyTimer = safeClear(happyTimer);
+    happyDeadline = 0;
     applyMood(MOOD.IDLE);
 
     // 只在真正从 SLEEP 醒来的那一刻问好，启动时的首次 IDLE 不乱说话
@@ -300,6 +330,73 @@ function handlePointerCancel(event) {
   if (!pointerTrack) return;
   if (event && event.pointerId !== undefined && event.pointerId !== pointerTrack.id) return;
   pointerTrack = null;
+}
+
+/* --------------------------------------------------------------------------
+   主循环联动与前后台生命周期（Step 1.3-C）
+   -------------------------------------------------------------------------- */
+
+/**
+ * 从后台恢复后的收敛。
+ * 浏览器在后台会节流甚至冻结 setTimeout，恢复时若死线已过，
+ * 立即结束到期状态，避免卡在 HAPPY / 气泡常显 / 半截微动动画。
+ */
+function reconcileAfterResume() {
+  runtime.reconciles += 1;
+
+  // 后台期间可能丢失 pointerup / pointercancel，残留按下态会让下一次轻点错位
+  pointerTrack = null;
+
+  const t = Date.now();
+
+  if (happyTimer !== null && happyDeadline !== 0 && t >= happyDeadline) {
+    happyTimer = safeClear(happyTimer);
+    happyDeadline = 0;
+    if (mood === MOOD.HAPPY && externalMood !== MOOD.SLEEP) applyMood(MOOD.IDLE);
+  }
+
+  if (bubbleTimer !== null && bubbleDeadline !== 0 && t >= bubbleDeadline) {
+    hideBubble();
+  }
+
+  microTimer = safeClear(microTimer);
+  if (container) container.classList.remove('is-bump', 'is-nudge');
+}
+
+/** 每帧钩子：只做观测统计，不改造型、不接管三态 CSS 动画 */
+function handleTick(dt) {
+  runtime.ticks += 1;
+  runtime.elapsed += dt;
+  runtime.lastDt = dt;
+  runtime.ticked = true;
+}
+
+function handlePetVisibility() {
+  if (typeof document === 'undefined' || document.hidden === true) return;
+  reconcileAfterResume();
+}
+
+/** 帧循环联动统计（只读快照） */
+export function getPetRuntime() {
+  const loop = getLoopStats();
+  return {
+    mood,
+    externalMood,
+    ticks: runtime.ticks,
+    elapsed: Math.round(runtime.elapsed * 1000) / 1000,
+    lastDt: runtime.lastDt,
+    reconciles: runtime.reconciles,
+    tickSubscribed: typeof unsubscribeTick === 'function',
+    loop: {
+      running: loop.running,
+      paused: loop.paused,
+      frames: loop.frames,
+      fps: loop.fps,
+      pauses: loop.pauses,
+      resumes: loop.resumes,
+      clampedFrames: loop.clampedFrames,
+    },
+  };
 }
 
 /* --------------------------------------------------------------------------
@@ -397,7 +494,15 @@ export function initPet() {
     container.addEventListener('pointerleave', handlePointerCancel);
   }
 
+  // 接入统一主循环：只挂一个观测钩子，重复初始化不会重复订阅
+  if (typeof unsubscribeTick !== 'function') {
+    unsubscribeTick = onTick(handleTick);
+  }
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', handlePetVisibility);
+  }
+
   return true;
 }
 
-export default { MOOD, initPet, setMood, playHappy, showBubble, hideBubble };
+export default { MOOD, initPet, setMood, playHappy, showBubble, hideBubble, getPetRuntime };
